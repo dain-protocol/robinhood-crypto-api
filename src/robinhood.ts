@@ -338,21 +338,32 @@ export class RobinhoodCrypto {
       client_order_id: uuidv4(),
     };
 
+    // BTC-USD has 8 decimal places
+    // ETH-USD has 6 decimal places
+    // DOGE-USD has 2 decimal places
+
+    let precision = 5;
+    if (payload.symbol === "BTC-USD") precision = 8;
+    else if (payload.symbol === "ETH-USD") precision = 6;
+    else if (payload.symbol === "DOGE-USD") precision = 2;
+
+    const multiplier = Math.pow(10, precision);
+
     if (payload.market_order_config?.asset_quantity) {
       payload.market_order_config.asset_quantity =
-        Math.floor(payload.market_order_config.asset_quantity * 1e5) / 1e5;
+        Math.floor(payload.market_order_config.asset_quantity * multiplier) / multiplier;
     }
     if (payload.limit_order_config?.asset_quantity) {
       payload.limit_order_config.asset_quantity =
-        Math.floor(payload.limit_order_config.asset_quantity * 1e5) / 1e5;
+        Math.floor(payload.limit_order_config.asset_quantity * multiplier) / multiplier;
     }
     if (payload.stop_loss_order_config?.asset_quantity) {
       payload.stop_loss_order_config.asset_quantity =
-        Math.floor(payload.stop_loss_order_config.asset_quantity * 1e5) / 1e5;
+        Math.floor(payload.stop_loss_order_config.asset_quantity * multiplier) / multiplier;
     }
     if (payload.stop_limit_order_config?.asset_quantity) {
       payload.stop_limit_order_config.asset_quantity =
-        Math.floor(payload.stop_limit_order_config.asset_quantity * 1e5) / 1e5;
+        Math.floor(payload.stop_limit_order_config.asset_quantity * multiplier) / multiplier;
     }
 
     const response = await this.makeRequest(

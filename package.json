@@ -1,6 +1,6 @@
 {
   "name": "robinhood-crypto",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "main": "dist/robinhood.js",
   "types": "dist/robinhood.d.ts",
   "scripts": {
