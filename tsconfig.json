@@ -4,6 +4,7 @@
     "module": "NodeNext",
     "lib": ["es2022", "dom"],
     "declaration": true,
+    "declarationMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -16,6 +17,6 @@
     },
     "sourceMap": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/**/*.d.ts"],
   "exclude": ["node_modules", "**/__tests__/*"]
 }
