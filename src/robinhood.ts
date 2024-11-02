@@ -284,7 +284,8 @@ export class RobinhoodCrypto {
     side: "bid" | "ask" | "both",
     quantities: number[]
   ): Promise<EstimatedPriceResponse> {
-    const queryString = `symbol=${symbol}&side=${side}&quantity=${quantities.join(
+    const formattedQuantities = quantities.map(q => Number(q.toFixed(8)));
+    const queryString = `symbol=${symbol}&side=${side}&quantity=${formattedQuantities.join(
       ","
     )}`;
     const response = await this.makeRequest(
@@ -321,10 +322,25 @@ export class RobinhoodCrypto {
 
   // Orders
   async placeOrder(order: OrderPayload): Promise<OrderResponse> {
+    // Ensure quantities have max 8 decimal places
     const payload = {
       ...order,
       client_order_id: uuidv4(),
     };
+
+    if (payload.market_order_config?.asset_quantity) {
+      payload.market_order_config.asset_quantity = Number(payload.market_order_config.asset_quantity.toFixed(8));
+    }
+    if (payload.limit_order_config?.asset_quantity) {
+      payload.limit_order_config.asset_quantity = Number(payload.limit_order_config.asset_quantity.toFixed(8)); 
+    }
+    if (payload.stop_loss_order_config?.asset_quantity) {
+      payload.stop_loss_order_config.asset_quantity = Number(payload.stop_loss_order_config.asset_quantity.toFixed(8));
+    }
+    if (payload.stop_limit_order_config?.asset_quantity) {
+      payload.stop_limit_order_config.asset_quantity = Number(payload.stop_limit_order_config.asset_quantity.toFixed(8));
+    }
+
     const response = await this.makeRequest(
       "/api/v1/crypto/trading/orders/",
       "POST", 
