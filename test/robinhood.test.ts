@@ -1,13 +1,23 @@
-import { RobinhoodCrypto, OrderPayload, BidAskResponse, EstimatedPriceResponse, OrderResponse, AccountResponse, HoldingsResponse, OrdersResponse } from "../src/robinhood";
+import {
+  RobinhoodCrypto,
+  OrderPayload,
+  BidAskResponse,
+  EstimatedPriceResponse,
+  OrderResponse,
+  AccountResponse,
+  HoldingsResponse,
+  OrdersResponse,
+} from "../src/robinhood";
 
 describe("RobinhoodCrypto", () => {
   let client: RobinhoodCrypto;
 
   beforeEach(() => {
     client = new RobinhoodCrypto({
-      privateKeyBase64: "",
-      publicKeyBase64: "", 
-      apiKey: "",
+      privateKeyBase64:
+        "NJeV8oNsnSnbTgn/LLaDrt1OWFAeNyUhCreNgZpZTZbMC6mrkVj5YeViOwCc39sGKiue5MR7Xpf4fm+DCqIVJg==",
+      publicKeyBase64: "zAupq5FY+WHlYjsAnN/bBiornuTEe16X+H5vgwqiFSY=",
+      apiKey: "rh-api-ae876b01-4c28-48a9-b657-c0afd5ff8bcd",
     });
   });
 
@@ -51,7 +61,9 @@ describe("RobinhoodCrypto", () => {
       expect(order.type).toBe("market");
       expect(Array.isArray(order.executions)).toBe(true);
       expect(typeof order.filled_asset_quantity).toBe("number");
-      expect(order.state).toMatch(/^(open|canceled|partially_filled|filled|failed)$/);
+      expect(order.state).toMatch(
+        /^(open|canceled|partially_filled|filled|failed)$/
+      );
     });
 
     it("should get orders with filters and verify response types", async () => {
@@ -59,10 +71,14 @@ describe("RobinhoodCrypto", () => {
         symbol: "DOGE-USD",
         side: "buy",
       });
-      expect(orders.next === null || typeof orders.next === "string").toBe(true);
-      expect(orders.previous === null || typeof orders.previous === "string").toBe(true);
+      expect(orders.next === null || typeof orders.next === "string").toBe(
+        true
+      );
+      expect(
+        orders.previous === null || typeof orders.previous === "string"
+      ).toBe(true);
       expect(Array.isArray(orders.results)).toBe(true);
-      
+
       if (orders.results.length > 0) {
         const order = orders.results[0];
         expect(order.id).toBeDefined();
@@ -84,13 +100,17 @@ describe("RobinhoodCrypto", () => {
 
       console.log("PLACED ORDER", placedOrder);
       const order: OrderResponse = await client.getOrder(placedOrder.id);
-      
+
       expect(order.id).toBe(placedOrder.id);
       expect(order.symbol).toBe("DOGE-USD");
       expect(order.side).toBe("buy");
       expect(order.type).toBe("market");
       expect(typeof order.filled_asset_quantity).toBe("number");
-      expect(parseFloat(order.market_order_config?.asset_quantity as unknown as string)).toBe(1);
+      expect(
+        parseFloat(
+          order.market_order_config?.asset_quantity as unknown as string
+        )
+      ).toBe(1);
     });
   });
 
@@ -98,7 +118,7 @@ describe("RobinhoodCrypto", () => {
     it("should get best bid/ask prices with proper types", async () => {
       const bidAsk: BidAskResponse = await client.getBestBidAsk(["BTC-USD"]);
       expect(Array.isArray(bidAsk.results)).toBe(true);
-      
+
       if (bidAsk.results.length > 0) {
         const result = bidAsk.results[0];
         expect(result.symbol).toBe("BTC-USD");
@@ -115,10 +135,10 @@ describe("RobinhoodCrypto", () => {
       const estimate: EstimatedPriceResponse = await client.getEstimatedPrice(
         "DOGE-USD",
         "bid",
-        [0.1, 0.2]
+        [1, 1]
       );
       expect(Array.isArray(estimate.results)).toBe(true);
-      
+
       if (estimate.results.length > 0) {
         const result = estimate.results[0];
         expect(result.symbol).toBe("DOGE-USD");
@@ -131,6 +151,28 @@ describe("RobinhoodCrypto", () => {
         expect(typeof result.buy_spread).toBe("number");
         expect(typeof result.timestamp).toBe("string");
       }
+    });
+  });
+
+  describe("Order Precision", () => {
+    it("should properly format order quantities to 8 decimal places", async () => {
+      const mockOrder: OrderPayload = {
+        symbol: "ETH-USD",
+        side: "buy",
+        type: "market",
+        market_order_config: {
+          asset_quantity: 0.000123123456789, // More than 8 decimal places
+        },
+      };
+
+      const placedOrder = await client.placeOrder(mockOrder);
+
+      // Verify the quantity was truncated to 8 decimal places
+      expect(
+        parseFloat(
+          placedOrder.market_order_config?.asset_quantity as unknown as string
+        )
+      ).toBe(0.00012);
     });
   });
 });

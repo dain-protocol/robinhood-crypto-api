@@ -237,24 +237,26 @@ export class RobinhoodCrypto {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        console.error('Request failed with the following details:');
+        console.error("Request failed with the following details:");
         console.error(`Status: ${response.status} ${response.statusText}`);
         console.error(`URL: ${this.baseUrl}${path}`);
         console.error(`Method: ${method}`);
-        console.error('Headers:', headers);
-        if (body) console.error('Request Body:', body);
-        console.error('Response Body:', errorBody);
-        throw new Error(`HTTP request failed - Status: ${response.status}, Body: ${errorBody}`);
+        console.error("Headers:", headers);
+        if (body) console.error("Request Body:", body);
+        console.error("Response Body:", errorBody);
+        throw new Error(
+          `HTTP request failed - Status: ${response.status}, Body: ${errorBody}`
+        );
       }
 
       return response.json();
     } catch (error) {
-      console.error('Failed to execute request:');
+      console.error("Failed to execute request:");
       console.error(`URL: ${this.baseUrl}${path}`);
       console.error(`Method: ${method}`);
-      console.error('Headers:', headers);
-      if (body) console.error('Request Body:', body);
-      console.error('Error details:', error);
+      console.error("Headers:", headers);
+      if (body) console.error("Request Body:", body);
+      console.error("Error details:", error);
       throw error;
     }
   }
@@ -271,11 +273,15 @@ export class RobinhoodCrypto {
       results: response.results.map((result: any) => ({
         ...result,
         price: parseFloat(result.price),
-        bid_inclusive_of_sell_spread: parseFloat(result.bid_inclusive_of_sell_spread),
+        bid_inclusive_of_sell_spread: parseFloat(
+          result.bid_inclusive_of_sell_spread
+        ),
         sell_spread: parseFloat(result.sell_spread),
-        ask_inclusive_of_buy_spread: parseFloat(result.ask_inclusive_of_buy_spread), 
-        buy_spread: parseFloat(result.buy_spread)
-      }))
+        ask_inclusive_of_buy_spread: parseFloat(
+          result.ask_inclusive_of_buy_spread
+        ),
+        buy_spread: parseFloat(result.buy_spread),
+      })),
     };
   }
 
@@ -284,7 +290,7 @@ export class RobinhoodCrypto {
     side: "bid" | "ask" | "both",
     quantities: number[]
   ): Promise<EstimatedPriceResponse> {
-    const formattedQuantities = quantities.map(q => Number(q.toFixed(8)));
+    const formattedQuantities = quantities.map((q) => Number(q.toFixed(8)));
     const queryString = `symbol=${symbol}&side=${side}&quantity=${formattedQuantities.join(
       ","
     )}`;
@@ -297,11 +303,15 @@ export class RobinhoodCrypto {
         ...result,
         price: parseFloat(result.price),
         quantity: parseFloat(result.quantity),
-        bid_inclusive_of_sell_spread: parseFloat(result.bid_inclusive_of_sell_spread),
+        bid_inclusive_of_sell_spread: parseFloat(
+          result.bid_inclusive_of_sell_spread
+        ),
         sell_spread: parseFloat(result.sell_spread),
-        ask_inclusive_of_buy_spread: parseFloat(result.ask_inclusive_of_buy_spread),
-        buy_spread: parseFloat(result.buy_spread)
-      }))
+        ask_inclusive_of_buy_spread: parseFloat(
+          result.ask_inclusive_of_buy_spread
+        ),
+        buy_spread: parseFloat(result.buy_spread),
+      })),
     };
   }
 
@@ -323,42 +333,57 @@ export class RobinhoodCrypto {
   // Orders
   async placeOrder(order: OrderPayload): Promise<OrderResponse> {
     // Ensure quantities have max 8 decimal places
-    const payload = {
+    let payload = {
       ...order,
       client_order_id: uuidv4(),
     };
 
     if (payload.market_order_config?.asset_quantity) {
-      payload.market_order_config.asset_quantity = Number(payload.market_order_config.asset_quantity.toFixed(8));
+      payload.market_order_config.asset_quantity =
+        Math.floor(payload.market_order_config.asset_quantity * 1e5) / 1e5;
     }
     if (payload.limit_order_config?.asset_quantity) {
-      payload.limit_order_config.asset_quantity = Number(payload.limit_order_config.asset_quantity.toFixed(8)); 
+      payload.limit_order_config.asset_quantity =
+        Math.floor(payload.limit_order_config.asset_quantity * 1e5) / 1e5;
     }
     if (payload.stop_loss_order_config?.asset_quantity) {
-      payload.stop_loss_order_config.asset_quantity = Number(payload.stop_loss_order_config.asset_quantity.toFixed(8));
+      payload.stop_loss_order_config.asset_quantity =
+        Math.floor(payload.stop_loss_order_config.asset_quantity * 1e5) / 1e5;
     }
     if (payload.stop_limit_order_config?.asset_quantity) {
-      payload.stop_limit_order_config.asset_quantity = Number(payload.stop_limit_order_config.asset_quantity.toFixed(8));
+      payload.stop_limit_order_config.asset_quantity =
+        Math.floor(payload.stop_limit_order_config.asset_quantity * 1e5) / 1e5;
     }
 
     const response = await this.makeRequest(
       "/api/v1/crypto/trading/orders/",
-      "POST", 
+      "POST",
       JSON.stringify(payload)
     );
     return {
       ...response,
-      average_price: response.average_price ? parseFloat(response.average_price as unknown as string) : null,
-      filled_asset_quantity: parseFloat(response.filled_asset_quantity as unknown as string)
+      average_price: response.average_price
+        ? parseFloat(response.average_price as unknown as string)
+        : null,
+      filled_asset_quantity: parseFloat(
+        response.filled_asset_quantity as unknown as string
+      ),
     };
   }
 
   async getOrder(orderId: string): Promise<OrderResponse> {
-    const response = await this.makeRequest(`/api/v1/crypto/trading/orders/${orderId}/`, "GET");
+    const response = await this.makeRequest(
+      `/api/v1/crypto/trading/orders/${orderId}/`,
+      "GET"
+    );
     return {
       ...response,
-      average_price: response.average_price ? parseFloat(response.average_price as unknown as string) : null,
-      filled_asset_quantity: parseFloat(response.filled_asset_quantity as unknown as string)
+      average_price: response.average_price
+        ? parseFloat(response.average_price as unknown as string)
+        : null,
+      filled_asset_quantity: parseFloat(
+        response.filled_asset_quantity as unknown as string
+      ),
     };
   }
 
@@ -369,7 +394,11 @@ export class RobinhoodCrypto {
     );
   }
 
-  async getOrders(filters?: OrderFilters, limit?: number, cursor?: string): Promise<OrdersResponse> {
+  async getOrders(
+    filters?: OrderFilters,
+    limit?: number,
+    cursor?: string
+  ): Promise<OrdersResponse> {
     let queryParams: string[] = [];
 
     if (filters) {
@@ -395,7 +424,11 @@ export class RobinhoodCrypto {
   }
 
   // Holdings
-  async getHoldings(assetCodes?: string[], limit?: number, cursor?: string): Promise<HoldingsResponse> {
+  async getHoldings(
+    assetCodes?: string[],
+    limit?: number,
+    cursor?: string
+  ): Promise<HoldingsResponse> {
     let queryParams: string[] = [];
 
     if (assetCodes) {
@@ -418,8 +451,10 @@ export class RobinhoodCrypto {
       results: response.results.map((holding: Holding) => ({
         ...holding,
         total_quantity: parseFloat(holding.total_quantity as unknown as string),
-        quantity_available_for_trading: parseFloat(holding.quantity_available_for_trading as unknown as string)
-      }))
+        quantity_available_for_trading: parseFloat(
+          holding.quantity_available_for_trading as unknown as string
+        ),
+      })),
     };
   }
 }
